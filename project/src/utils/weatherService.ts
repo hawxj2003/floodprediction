@@ -23,100 +23,60 @@ export async function getWeatherData(city: string): Promise<WeatherData> {
 
 export function prepareModelInput(weatherData: WeatherData): MLModelInput {
   const currentDay = weatherData.days[0];
-  
+
   return {
     latitude: weatherData.latitude,
     longitude: weatherData.longitude,
     precipitation: currentDay.precip,
     humidity: currentDay.humidity,
     temperature: currentDay.temp,
-    windSpeed: currentDay.windspeed,
-    pressure: currentDay.pressure,
-    cloudCover: currentDay.cloudcover
+    windSpeed: currentDay.windspeed ?? 0,
+    pressure: currentDay.pressure ?? 1013,
+    cloudCover: currentDay.cloudcover ?? 0,
+    visibility: currentDay.visibility ?? 10,
+    severerisk: currentDay.severerisk ?? 0,
+    solarradiation: currentDay.solarradiation ?? 0,
+    solarenergy: currentDay.solarenergy ?? 0,
+    uvindex: currentDay.uvindex ?? 0,
+    moonphase: currentDay.moonphase ?? 0,
+    snowdepth: currentDay.snowdepth ?? 0,
+    snow: currentDay.snow ?? 0,
+    precipprob: currentDay.precipprob ?? 0,
+    winddir: currentDay.winddir ?? 0,
+    elevation: 10, // Replace with actual if available
+    soilMoisture: 0.2 // Replace with actual if available
   };
 }
 
-// Temporary prediction function until ML model is integrated
-export function predictFloodRisk(weatherData: WeatherData): PredictionResult {
-  const currentDay = weatherData.days[0];
-  const { precip, humidity, pressure = 1013.25, windspeed = 0 } = currentDay;
-
-  // Enhanced rule-based system (temporary until ML model is ready)
-  let floodRisk: PredictionResult['floodRisk'] = 'Low';
-  let confidence = 0.5;
-  const factors: PredictionResult['factors'] = [];
-
-  // Precipitation impact
-  factors.push({
-    name: 'Precipitation',
-    value: precip,
-    impact: precip > 1 ? 'positive' : precip > 0.5 ? 'neutral' : 'negative'
-  });
-
-  // Humidity impact
-  factors.push({
-    name: 'Humidity',
-    value: humidity,
-    impact: humidity > 80 ? 'positive' : humidity > 70 ? 'neutral' : 'negative'
-  });
-
-  // Pressure impact (low pressure often associated with rain)
-  factors.push({
-    name: 'Pressure',
-    value: pressure,
-    impact: pressure < 1000 ? 'positive' : pressure < 1010 ? 'neutral' : 'negative'
-  });
-
-  // Wind impact (high winds can affect flooding)
-  factors.push({
-    name: 'Wind Speed',
-    value: windspeed,
-    impact: windspeed > 20 ? 'positive' : windspeed > 10 ? 'neutral' : 'negative'
-  });
-
-  // Calculate risk level based on multiple factors
-  const riskScore = factors.reduce((score, factor) => {
-    const impactValue = factor.impact === 'positive' ? 1 : 
-                       factor.impact === 'neutral' ? 0.5 : 0;
-    return score + impactValue;
-  }, 0) / factors.length;
-
-  if (riskScore > 0.7) {
-    floodRisk = 'High';
-    confidence = 0.8;
-  } else if (riskScore > 0.4) {
-    floodRisk = 'Medium';
-    confidence = 0.6;
-  }
-
-  return { floodRisk, confidence, factors };
-}
-
-// This function will call your ML model API when it's ready
-export async function predictFloodRiskML(modelInput: MLModelInput): Promise<PredictionResult> {
-  // TODO: Replace with actual ML model API call
+export async function predictFloodRiskML(
+  modelInput: MLModelInput
+): Promise<PredictionResult> {
   try {
-    const response = await axios.post('YOUR_ML_MODEL_API_ENDPOINT', modelInput);
-    return response.data;
+    const { data } = await axios.post<{
+      floodRisk: PredictionResult['floodRisk'];
+      confidence: number;
+    }>('http://127.0.0.1:8000/predict', modelInput);
+
+    return {
+      floodRisk: data.floodRisk,    // 'Low' | 'Medium' | 'High'
+      confidence: data.confidence,  // between 0.0 and 1.0
+      factors: [
+        {
+          name: 'ML Model',
+          value: data.confidence,
+          impact: data.floodRisk,    // now matches your widened impact type
+        },
+      ],
+    };
   } catch (error) {
     console.error('Error calling ML model:', error);
-    // Fallback to rule-based prediction
-    const weatherData: WeatherData = {
-      address: '',
-      latitude: modelInput.latitude,
-      longitude: modelInput.longitude,
-      resolvedAddress: '',
-      days: [{
-        datetime: new Date().toISOString(),
-        temp: modelInput.temperature,
-        precip: modelInput.precipitation,
-        humidity: modelInput.humidity,
-        conditions: '',
-        windspeed: modelInput.windSpeed,
-        pressure: modelInput.pressure,
-        cloudcover: modelInput.cloudCover
-      }]
+    // Neutral fallback
+    return {
+      floodRisk: 'Low',
+      confidence: 0.5,
+      factors: [
+        { name: 'Fallback', value: 0.5, impact: 'neutral' },
+      ],
     };
-    return predictFloodRisk(weatherData);
   }
 }

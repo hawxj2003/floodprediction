@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { CloudRain, Droplets, MapPin, AlertTriangle, Wind, Gauge, Shield, Brain, Database } from 'lucide-react';
-import { getWeatherData, predictFloodRisk } from './utils/weatherService';
+import { Droplets, MapPin, AlertTriangle, Wind, Gauge, Shield, Brain, Database } from 'lucide-react';
+import { getWeatherData, prepareModelInput, predictFloodRiskML } from './utils/weatherService';
 import type { WeatherData, PredictionResult } from './types';
 
 // Fix Leaflet default icon issue
@@ -73,8 +73,8 @@ function App() {
               duration: 2,
             });
           }
-  
-          const floodPrediction = predictFloodRisk(weatherData);
+          const modelInput = prepareModelInput(weatherData);
+          const floodPrediction = await predictFloodRiskML(modelInput);
           setPrediction(floodPrediction);
   
         } catch (error) {
@@ -106,8 +106,12 @@ function App() {
           duration: 2,
         }); 
       }
+      
 
-      const floodPrediction = predictFloodRisk(data);
+      // Prepare the data for the ML model
+      const modelInput = prepareModelInput(data);  // Convert WeatherData to MLModelInput
+      // Get flood prediction from the ML model
+      const floodPrediction = await predictFloodRiskML(modelInput);
       setPrediction(floodPrediction);
     } catch (err) {
       setError('Failed to fetch weather data. Please try again.');
