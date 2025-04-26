@@ -4,6 +4,7 @@ import torch
 import numpy as np
 import joblib
 from weather_mlp import WeatherMLP
+from fastapi.middleware.cors import CORSMiddleware
 
 
 # Load the trained model
@@ -37,6 +38,16 @@ class InputData(BaseModel):
     soilMoisture: float
 
 app = FastAPI()
+
+# 🚨 Add CORS middleware BEFORE your routes
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # 👈 Allow only your frontend
+    allow_credentials=True,
+    allow_methods=["*"],  # Allow all HTTP methods (POST, GET, etc)
+    allow_headers=["*"],  # Allow all headers
+)
+
 
 @app.post("/predict")
 async def predict(input_data: InputData):
