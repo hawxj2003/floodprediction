@@ -298,9 +298,9 @@ function App() {
                       <div className="bg-gray-50 p-4 rounded-lg">
                         <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
                           <Gauge className="text-gray-600" />
-                          Pressure
+                          Temperature
                         </h3>
-                        <p className="text-gray-600">{weatherData.days[0].pressure} mb</p>
+                        <p className="text-gray-600">{weatherData.days[0].temp} °F</p>
                       </div>
                     </div>
 
@@ -322,20 +322,6 @@ function App() {
                         <p className="text-gray-600">
                           Confidence: {(prediction.confidence * 100).toFixed(1)}%
                         </p>
-                        <div className="mt-4">
-                          <h4 className="font-semibold mb-2">Contributing Factors:</h4>
-                          <ul className="space-y-1">
-                            {prediction.factors.map((factor, index) => (
-                              <li key={index} className="flex items-center gap-2 text-gray-600">
-                                <span className={`w-2 h-2 rounded-full ${
-                                  factor.impact === 'positive' ? 'bg-red-500' :
-                                  factor.impact === 'neutral' ? 'bg-yellow-500' : 'bg-green-500'
-                                }`}></span>
-                                {factor.name}: {factor.value}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
                       </div>
                     </div>
                   </div>
