@@ -1,16 +1,14 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-import torch
+
 import numpy as np
 import joblib
-from weather_mlp import WeatherMLP
 from fastapi.middleware.cors import CORSMiddleware
+from scipy.special import expit 
 
 
 # Load the trained model
-model = WeatherMLP(input_dim=20)
-model.load_state_dict(torch.load("mlp_flood_model.pth", map_location="cpu"))
-model.eval()
+model = joblib.load("xgb_model.pkl")
 
 # Load the scaler
 scaler = joblib.load("scaler.pkl")
@@ -39,15 +37,19 @@ class InputData(BaseModel):
 
 app = FastAPI()
 
-# 🚨 Add CORS middleware BEFORE your routes
+# Define allowed origins (you can specify your frontend URL)
+origins = [
+    "http://localhost:3000",  # Frontend server address
+]
+
+# Add CORSMiddleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 👈 Allow only your frontend
+    allow_origins=origins,  # Allow requests from this origin
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods (POST, GET, etc)
+    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
     allow_headers=["*"],  # Allow all headers
 )
-
 
 @app.post("/predict")
 async def predict(input_data: InputData):
@@ -77,22 +79,22 @@ async def predict(input_data: InputData):
     # Scale the input data
     scaled_input = scaler.transform(input_array)
 
-    x = torch.tensor(scaled_input, dtype=torch.float32)
+    # Predict using the XGBRegressor model (use the `predict` method)
+    prediction = model.predict(scaled_input)
 
-    with torch.no_grad():
-        logits = model(x)
-        probs = torch.sigmoid(logits).item()
+    # Since we are using sigmoid output, we will convert this prediction to a probability
+    prob = prediction[0]
 
     # Determine flood risk based on the probability
-    if probs < 0.3:
+    if prob < 0.3:
         predicted_risk = "Low"
-    elif probs < 0.7:
+    elif prob < 0.7:
         predicted_risk = "Medium"
     else:
         predicted_risk = "High"
     
+    # Return flood risk and confidence level
     return {
         "floodRisk": predicted_risk,
-        "confidence": round(probs * 100, 2),
-    
+        "confidence": round(prob * 100, 2)  # Show confidence level as percentage
     }
