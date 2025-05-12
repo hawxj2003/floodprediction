@@ -352,7 +352,7 @@ function App() {
                           Risk Level: {prediction.floodRisk}
                         </p>
                         <p className="text-gray-600">
-                          Confidence: {(prediction.confidence).toFixed(1)}%
+                          Flood Probability: {(prediction.confidence).toFixed(1)}%
                         </p>
                       </div>
                     </div>
@@ -472,7 +472,10 @@ function App() {
           <div className="flex flex-col items-center justify-between sm:flex-row">
             {/* Title */}
             <div className="text-center sm:text-left mb-6 sm:mb-0">
-              <h3 className="text-2xl font-bold">Flood Prediction</h3>
+              <div className="flex items-center justify-center sm:justify-start">
+                <img src="/logo.jpg" alt="FloodCast" className="w-8 h-8 mr-2" />
+                <h3 className="text-2xl font-bold">FloodCast</h3>
+              </div>
               <p className="text-gray-400 mt-2">Predict & Prevent Flood Risks</p>
             </div>
 
@@ -538,7 +541,7 @@ function App() {
           {/* Copyright */}
           <div className="mt-8 text-center">
             <p className="text-gray-400 text-sm">
-              &copy; MDS12. All rights reserved.
+              &copy; FloodCast. All rights reserved.
             </p>
           </div>
         </div>
