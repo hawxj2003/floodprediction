@@ -96,5 +96,5 @@ async def predict(input_data: InputData):
     # Return flood risk and confidence level
     return {
         "floodRisk": predicted_risk,
-        "confidence": round(prob * 100, 2)  # Show confidence level as percentage
+        "flood Probability": round(prob * 100, 2)  # Show confidence level as percentage
     }
