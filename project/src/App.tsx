@@ -429,9 +429,8 @@ function App() {
               <h3 className="text-2xl font-semibold mb-6">Contact Us</h3>
               <p className="text-gray-600 mb-6">Have a question not listed here? Reach out directly:</p>
               <form 
-                action="mailto:jang0038@student.monash.edu?subject=Feedback:%20Flood%20Prediction%20Application" 
-                method="post" 
-                encType="text/plain" 
+                action="https://formspree.io/f/mrbqjjea" // Replace with your own
+                method="POST"
                 className="space-y-4"
               >
                 <input
