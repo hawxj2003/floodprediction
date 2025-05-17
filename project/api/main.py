@@ -1,18 +1,16 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-
 import numpy as np
 import joblib
 from fastapi.middleware.cors import CORSMiddleware
-from scipy.special import expit 
+import pandas as pd
 
-
-# Load the trained model
+# Load model, scaler, and feature columns list (make sure these files are updated after retraining)
 model = joblib.load("xgb_model.pkl")
-
-# Load the scaler
 scaler = joblib.load("scaler.pkl")
+feature_columns = joblib.load("feature_columns.pkl")
 
+# Define input schema matching your features
 class InputData(BaseModel):
     latitude: float
     longitude: float
@@ -37,64 +35,51 @@ class InputData(BaseModel):
 
 app = FastAPI()
 
-# Define allowed origins (you can specify your frontend URL)
+# Allow CORS from your frontend server
 origins = [
-    "http://localhost:3000",  # Frontend server address
+    "http://localhost:3000",
 ]
 
-# Add CORSMiddleware to allow cross-origin requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  # Allow requests from this origin
+    allow_origins=origins,
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods (GET, POST, etc.)
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.post("/predict")
 async def predict(input_data: InputData):
-    input_array = np.array([[  
-        input_data.latitude,
-        input_data.longitude,
-        input_data.precipitation,
-        input_data.humidity,
-        input_data.temperature,
-        input_data.windSpeed,
-        input_data.pressure,
-        input_data.cloudCover,
-        input_data.visibility,
-        input_data.severerisk,
-        input_data.solarradiation,
-        input_data.solarenergy,
-        input_data.uvindex,
-        input_data.moonphase,
-        input_data.snowdepth,
-        input_data.snow,
-        input_data.precipprob,
-        input_data.winddir,
-        input_data.elevation,
-        input_data.soilMoisture
-    ]], dtype=np.float32)
+    input_dict = input_data.dict()
+    input_df = pd.DataFrame([input_dict])
 
-    # Scale the input data
-    scaled_input = scaler.transform(input_array)
+    print("input_df.columns:", list(input_df.columns))
+    print("feature_columns:", feature_columns)
+    print("input_df types:", input_df.dtypes)
+    print("feature_columns types:", type(feature_columns), 
+          ", element type:", type(feature_columns[0]))
 
-    # Predict using the XGBRegressor model (use the `predict` method)
+    # Reorder columns exactly to match training order, filling missing with NaN
+    input_df = input_df.reindex(columns=feature_columns)
+
+    print("input_df.columns after reindex:", list(input_df.columns))
+
+    scaled_input = scaler.transform(input_df)
     prediction = model.predict(scaled_input)
-
-    # Since we are using sigmoid output, we will convert this prediction to a probability
     prob = prediction[0]
 
-    # Determine flood risk based on the probability
     if prob < 0.3:
         predicted_risk = "Low"
     elif prob < 0.7:
         predicted_risk = "Medium"
     else:
         predicted_risk = "High"
-    
-    # Return flood risk and confidence level
-    return {
+
+    response = {
         "floodRisk": predicted_risk,
-        "flood Probability": round(prob * 100, 2)  # Show confidence level as percentage
+        "confidence": round(prob * 100, 2)
     }
+    
+    print("Prediction output:", response)   
+    
+    return response

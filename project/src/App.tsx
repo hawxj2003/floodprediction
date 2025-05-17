@@ -352,7 +352,7 @@ function App() {
                           Risk Level: {prediction.floodRisk}
                         </p>
                         <p className="text-gray-600">
-                          Flood Probability: {(prediction.confidence).toFixed(1)}%
+                          Flood Probability: {Number(prediction.confidence).toFixed(1)}%
                         </p>
                       </div>
                     </div>
